@@ -27,7 +27,8 @@ K3 Cloud是一款开放的ERP云平台.
                       base.BarItemClick(e);
                       Entity entitys = this.View.BillBusinessInfo.GetEntity("FEntity");//单据分录实体元数据
                       DynamicObjectCollection cons = entitys.DynamicProperty.GetValue(this.Model.DataObject) as DynamicObjectCollection;
-                      if (e.BarItemKey == "tbSave" || e.BarItemKey == "tbSplitSave") //保存唯一标识
+                      
+                      if (e.BarItemKey == "tbSave" || e.BarItemKey == "tbSplitSave") //保存唯一标识
                       { 
                           //注解： i--遍历删除记录行，而非 i++处理删除记录行，是为了避免DeleteEntryRow执行导致Cons--，循环条件不满足，终止了循                                     环，造成不能一次性完成【保存】删除记录行。
                           for (int i = cons.Count - 1; i >= 0; i--) 
