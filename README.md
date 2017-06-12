@@ -21,6 +21,7 @@ K3 Cloud是一款开放的ERP云平台.
         2，如下插件实现：
            思路：继承AbstractBillPlugIn，引用Kingdee.BOS,Kingdee.BOS.Core,Kingdee.BOS.DataEntity组件，添加Kingdee.BOS.Core.Bill.PlugIn，Kingdee.BOS.Orm.DataEntity，Kingdee.BOS.Core.Metadata.EntityElement实体对象，重载BarItemClick方法；
            插件：
+           
                  public override void BarItemClick(Kingdee.BOS.Core.DynamicForm.PlugIn.Args.BarItemClickEventArgs e)
                   {
                       base.BarItemClick(e);
@@ -45,63 +46,62 @@ K3 Cloud是一款开放的ERP云平台.
            2，如下插件实现：
               思路：继承AbstractBillPlugIn，引用Kingdee.BOS,Kingdee.BOS.Core,Kingdee.BOS.DataEntity,Kingdee.BOS.ServiceHelper,添加Kingdee.BOS.Core.Bill.PlugIn,Kingdee.BOS.Orm.DataEntity,Kingdee.BOS.Core.Metadata.EntityElement,Kingdee.BOS.ServiceHelper,Kingdee.BOS.Core.Metadata实体对象，重载ButtonClick方法。
               插件：
-          public override void ButtonClick(Kingdee.BOS.Core.DynamicForm.PlugIn.Args.ButtonClickEventArgs e)
-          {
-            base.ButtonClick(e);
-            List<SelectorItemInfo> selectItems = new List<SelectorItemInfo>(); //即时库存的字段片段列表
-            selectItems.Add(new SelectorItemInfo("FStockId"));
-            selectItems.Add(new SelectorItemInfo("FStockName"));
-            selectItems.Add(new SelectorItemInfo("FQty"));
-            selectItems.Add(new SelectorItemInfo("FMaterialId"));
-            selectItems.Add(new SelectorItemInfo("FMaterialName"));
-            selectItems.Add(new SelectorItemInfo("F_CMK_Text"));
-            OQLFilter filters = new OQLFilter(); //快捷过滤对象
-            filters.Add(new OQLFilterHeadEntityItem { FilterString = string.Format("FStockOrgId = {0}", this.Model.Context.CurrentOrganizationInfo.ID) }); 
-            //即时库存列表的集合数据
-            DynamicObject[] newLibraryDataModels = BusinessDataServiceHelper.Load(this.Context, "STK_Inventory", selectItems, filters);
-            Entity entitys = this.View.BillBusinessInfo.GetEntity("FEntity");//申请调拨单单据体的元数据模型
-            DynamicObjectCollection cons = entitys.DynamicProperty.GetValue(this.Model.DataObject) as DynamicObjectCollection;
-            DynamicObject dyObjects1 = this.View.Model.GetValue("F_CMK_WareHouseOne") as DynamicObject;//当前仓库列表
-            DynamicObject dyObjects2 = this.View.Model.GetValue("F_CMK_WareHouseTwo") as DynamicObject;
-            DynamicObject dyObjects3 = this.View.Model.GetValue("F_CMK_WareHouseThree") as DynamicObject;
-            String LibraryNumber01 = Convert.ToString(dyObjects1["Number"]); //申请调拨单的仓库一编码(此方式，要BOS上添加字段引用)
-            String LibraryNumber02 = Convert.ToString(dyObjects2["Number"]); //申请调拨单的仓库二编码  
-            String LibraryNumber03 = Convert.ToString(dyObjects3["Number"]); //申请调拨单的仓库三编码           
-            if (e.Key.ToUpper() == "F_CMK_BUTTON")
-            {
-                for (int i = 0; i < cons.Count; i++)
-                {
-                    Decimal sum01 = 0; // 用于累加即时库存中多行同一物料的
-                    Decimal sum02 = 0;
-                    Decimal sum03 = 0;
-                    
-                    for (int j = 0; j < newLibraryDataModels.Count(); j++)
-                    {
-                        DynamicObject libraryDatas = newLibraryDataModels[j]["StockID"] as DynamicObject;
-                        String LibraryNumber = Convert.ToString(libraryDatas["Number"]); //即时库存的仓库编码
-
-                        DynamicObject materialDatas = cons[i]["F_CMK_Base3"] as DynamicObject;
-                        String MaterialNumber = Convert.ToString(materialDatas["Number"]); //申请调拨单的物料编码
-                        DynamicObject newLibaryDatas = newLibraryDataModels[j]["MaterialID"] as DynamicObject;
-                        String MaterialNumber01 = Convert.ToString(newLibaryDatas["Number"]); //即时库存的物料编码
-                        if(LibraryNumber01.Equals(LibraryNumber) && MaterialNumber.Equals(MaterialNumber01))
-                        {
-                          sum01 += Convert.ToDecimal(newLibraryDataModels[j]["FQty"]);
-                          this.Model.SetValue("F_CMK_Qty", sum01, i);
-                        }
-                        if (LibraryNumber02.Equals(LibraryNumber) && MaterialNumber.Equals(MaterialNumber01))
-                        {
-                            sum02 += Convert.ToDecimal(newLibraryDataModels[j]["FQty"]);
-                            this.Model.SetValue("F_CMK_Qty1", sum02, i);
-                        }
-                        if (LibraryNumber03.Equals(LibraryNumber) && MaterialNumber.Equals(MaterialNumber01))
-                        {
-                            sum03 += Convert.ToDecimal(newLibraryDataModels[j]["FQty"]);
-                            this.Model.SetValue("F_CMK_Qty2", sum03, i);
-                        }   
-                    }    
-                 }
-             }
-                this.View.UpdateView("FEntity");
-           }
+                     
+                  public override void ButtonClick(Kingdee.BOS.Core.DynamicForm.PlugIn.Args.ButtonClickEventArgs e)
+                  {
+                      base.ButtonClick(e);
+                      List<SelectorItemInfo> selectItems = new List<SelectorItemInfo>(); //即时库存的字段片段列表
+                      selectItems.Add(new SelectorItemInfo("FStockId"));
+                      selectItems.Add(new SelectorItemInfo("FStockName"));
+                      selectItems.Add(new SelectorItemInfo("FQty"));
+                      selectItems.Add(new SelectorItemInfo("FMaterialId"));
+                      selectItems.Add(new SelectorItemInfo("FMaterialName"));
+                      selectItems.Add(new SelectorItemInfo("F_CMK_Text"));
+                      OQLFilter filters = new OQLFilter(); //快捷过滤对象
+                      filters.Add(new OQLFilterHeadEntityItem { FilterString = string.Format("FStockOrgId = {0}", this.Model.Context.CurrentOrganizationInfo.ID) }); 
+                      //即时库存列表的集合数据
+                      DynamicObject[] newLibraryDataModels = BusinessDataServiceHelper.Load(this.Context, "STK_Inventory", selectItems, filters);
+                      Entity entitys = this.View.BillBusinessInfo.GetEntity("FEntity");//申请调拨单单据体的元数据模型
+                      DynamicObjectCollection cons = entitys.DynamicProperty.GetValue(this.Model.DataObject) as DynamicObjectCollection;
+                      DynamicObject dyObjects1 = this.View.Model.GetValue("F_CMK_WareHouseOne") as DynamicObject;//当前仓库列表
+                      DynamicObject dyObjects2 = this.View.Model.GetValue("F_CMK_WareHouseTwo") as DynamicObject;
+                      DynamicObject dyObjects3 = this.View.Model.GetValue("F_CMK_WareHouseThree") as DynamicObject;
+                      String LibraryNumber01 = Convert.ToString(dyObjects1["Number"]); //申请调拨单的仓库一编码(此方式，要BOS上添加字段引用)
+                      String LibraryNumber02 = Convert.ToString(dyObjects2["Number"]); //申请调拨单的仓库二编码  
+                      String LibraryNumber03 = Convert.ToString(dyObjects3["Number"]); //申请调拨单的仓库三编码           
+                      if (e.Key.ToUpper() == "F_CMK_BUTTON")
+                      {
+                         for (int i = 0; i < cons.Count; i++)
+                         {
+                             Decimal sum01 = 0; // 用于累加即时库存中多行同一物料的
+                             Decimal sum02 = 0;
+                             Decimal sum03 = 0;   
+                             for (int j = 0; j < newLibraryDataModels.Count(); j++)
+                             {
+                                DynamicObject libraryDatas = newLibraryDataModels[j]["StockID"] as DynamicObject;
+                                String LibraryNumber = Convert.ToString(libraryDatas["Number"]); //即时库存的仓库编码
+                                DynamicObject materialDatas = cons[i]["F_CMK_Base3"] as DynamicObject;
+                                String MaterialNumber = Convert.ToString(materialDatas["Number"]); //申请调拨单的物料编码
+                                DynamicObject newLibaryDatas = newLibraryDataModels[j]["MaterialID"] as DynamicObject;
+                                String MaterialNumber01 = Convert.ToString(newLibaryDatas["Number"]); //即时库存的物料编码
+                                if(LibraryNumber01.Equals(LibraryNumber) && MaterialNumber.Equals(MaterialNumber01))
+                                {
+                                   sum01 += Convert.ToDecimal(newLibraryDataModels[j]["FQty"]);
+                                   this.Model.SetValue("F_CMK_Qty", sum01, i);
+                                }
+                                if (LibraryNumber02.Equals(LibraryNumber) && MaterialNumber.Equals(MaterialNumber01))
+                                {
+                                   sum02 += Convert.ToDecimal(newLibraryDataModels[j]["FQty"]);
+                                   this.Model.SetValue("F_CMK_Qty1", sum02, i);
+                                }
+                                if (LibraryNumber03.Equals(LibraryNumber) && MaterialNumber.Equals(MaterialNumber01))
+                                {
+                                   sum03 += Convert.ToDecimal(newLibraryDataModels[j]["FQty"]);
+                                   this.Model.SetValue("F_CMK_Qty2", sum03, i);
+                                }   
+                           }    
+                         }
+                      }
+                     this.View.UpdateView("FEntity");
+                   }
               
