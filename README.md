@@ -104,5 +104,108 @@ K3 Cloud是一款开放的ERP云平台.
                          }
                       }
                      this.View.UpdateView("FEntity");
-                   }
-              
+                   }
+------------------------------------------------------2017-07-23---------------------------------------------------
+# k3cloud即使库存表说明：
+# 即时库存表中的库存单位的数量是不准确的，是在查询时根据基本单位数量重新换算的，物料的表库存信息表T_BD_MATERIALSTOCK 中冗余的有基本单位和库存单位之间# 的换算分子和换算分母，可以用来计算库存单位数量，但是也要考虑库存单位的精度和舍入类型
+1，修改后的插件：
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Kingdee.BOS.Core.Bill.PlugIn;
+using Kingdee.BOS.Core.DynamicForm.PlugIn.Args;
+using Kingdee.BOS.Core.Metadata;
+using Kingdee.BOS.Core.Metadata.EntityElement;
+using Kingdee.BOS.Orm.DataEntity;
+using Kingdee.BOS.ServiceHelper;
+using System.ComponentModel;
+
+namespace KingdeeHaikou.BOS.Core.ApplicationRequisition
+{
+    [Description("申请调拨单 - @SL")]
+    public class AppTransferBillEdit : AbstractBillPlugIn
+    {
+        public override void BarItemClick(BarItemClickEventArgs e)
+        {
+            base.BarItemClick(e);
+            Entity entitys = base.View.BillBusinessInfo.GetEntity("FEntity");
+            DynamicObjectCollection cons = entitys.DynamicProperty.GetValue(this.Model.DataObject) as DynamicObjectCollection;
+            if (e.BarItemKey == "tbSave" || e.BarItemKey == "tbSplitSave")
+            {
+                for (int i = cons.Count - 1; i >= 0; i--)
+                {
+                    if (Convert.ToInt32(cons[i]["F_CMK_Qty3"]) == 0)
+                    {
+                        base.View.Model.DeleteEntryRow("FEntity", i);
+                    }
+                }
+            }
+        }
+
+        public override void ButtonClick(ButtonClickEventArgs e)
+        {
+            base.ButtonClick(e);
+            List<SelectorItemInfo> selectItems = new List<SelectorItemInfo>();
+            selectItems.Add(new SelectorItemInfo("FStockId"));
+            selectItems.Add(new SelectorItemInfo("FStockName"));
+            selectItems.Add(new SelectorItemInfo("FQty"));
+            selectItems.Add(new SelectorItemInfo("FBASEQTY"));
+            selectItems.Add(new SelectorItemInfo("FMaterialId"));
+            selectItems.Add(new SelectorItemInfo("FMaterialName"));
+            selectItems.Add(new SelectorItemInfo("F_CMK_Text"));
+            OQLFilter filters = new OQLFilter();
+            filters.Add(new OQLFilterHeadEntityItem
+            {
+                FilterString = string.Format("FStockOrgId = {0}", this.Model.Context.CurrentOrganizationInfo.ID)
+            });
+            DynamicObject[] newLibraryDataModels = BusinessDataServiceHelper.Load(base.Context, "STK_Inventory", selectItems, filters);
+            Entity entitys = base.View.BillBusinessInfo.GetEntity("FEntity");
+            DynamicObjectCollection cons = entitys.DynamicProperty.GetValue(this.Model.DataObject) as DynamicObjectCollection;
+            DynamicObject dyObjects = base.View.Model.GetValue("F_CMK_WareHouseOne") as DynamicObject;
+            DynamicObject dyObjects2 = base.View.Model.GetValue("F_CMK_WareHouseTwo") as DynamicObject;
+            DynamicObject dyObjects3 = base.View.Model.GetValue("F_CMK_WareHouseThree") as DynamicObject;
+            if (e.Key.ToUpper() == "F_PAEZ_BUTTON")
+            {
+                for (int i = 0; i < cons.Count; i++)
+                {
+                    decimal sum = 0m;
+                    decimal sum2 = 0m;
+                    decimal sum3 = 0m;
+                    for (int j = 0; j < newLibraryDataModels.Count<DynamicObject>(); j++)
+                    {
+                        DynamicObject libraryDatas = newLibraryDataModels[j]["StockID"] as DynamicObject;
+                        string LibraryNumber = Convert.ToString(libraryDatas["Number"]);
+                        string LibraryNumber2 = Convert.ToString(Convert.ToString(dyObjects["Number"]));
+                        string LibraryNumber3 = Convert.ToString(Convert.ToString(dyObjects2["Number"]));
+                        string LibraryNumber4 = Convert.ToString(Convert.ToString(dyObjects3["Number"]));
+                        DynamicObject materialDatas = cons[i]["F_CMK_Base3"] as DynamicObject;
+                        string MaterialNumber = Convert.ToString(materialDatas["Number"]);
+                        DynamicObject newLibaryDatas = newLibraryDataModels[j]["MaterialID"] as DynamicObject;
+                        string MaterialNumber2 = Convert.ToString(newLibaryDatas["Number"]);
+                        if (LibraryNumber2.Equals(LibraryNumber) && MaterialNumber.Equals(MaterialNumber2))
+                        {
+                            sum += Convert.ToDecimal(newLibraryDataModels[j]["FBASEQTY"]);
+                            this.Model.SetValue("F_CMK_Qty", sum, i);
+                        }
+                        if (LibraryNumber3.Equals(LibraryNumber) && MaterialNumber.Equals(MaterialNumber2))
+                        {
+                            sum2 += Convert.ToDecimal(newLibraryDataModels[j]["FBASEQTY"]);
+                            this.Model.SetValue("F_CMK_Qty1", sum2, i);
+                        }
+                        if (LibraryNumber4.Equals(LibraryNumber) && MaterialNumber.Equals(MaterialNumber2))
+                        {
+                            sum3 += Convert.ToDecimal(newLibraryDataModels[j]["FBASEQTY"]);
+                            this.Model.SetValue("F_CMK_Qty2", sum3, i);
+                        }
+                    }
+                }
+            }
+            base.View.UpdateView("FEntity");
+        }
+    }
+}
+2， 上插件还需配合BOSIDE的实体服务规则，库存量的换算(物料中库存页签下存在库存单位的换算率分子和库存单位的换算率分母)。<库存的数量(基本单位)->库存的数量(库存单位)>
+
